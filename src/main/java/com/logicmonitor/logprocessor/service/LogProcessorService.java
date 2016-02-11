@@ -149,7 +149,8 @@ public enum LogProcessorService {
 		readService.shutdown();
 		try {
 			readService.awaitTermination(1, TimeUnit.DAYS);
-		} catch (InterruptedException e) {}
+		} catch (InterruptedException e) {
+		}
 
 		processService.shutdownNow();
 		writeService.shutdownNow();

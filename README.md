@@ -3,7 +3,7 @@
 Main.java - Starting point of execution.
 It calls the processLogs() method of the Singleton class - LogProcessorService (Implemented using Enum)
 
-## LogProcessorService contains 4 ExecutorService for the following purpose
+### LogProcessorService contains 4 ExecutorService for the following purpose
 
 ```
 1. FileReadTask
@@ -17,7 +17,7 @@ It calls the processLogs() method of the Singleton class - LogProcessorService (
   3. Write Log Files back - take a fileBean from filesToWrite and persist in the path, this will replace the existing log file with the same Name
   4. Monitor Service - monitors the JVM memory and pauses the ReadService from loading the Queue until process and write service processes them and also waits until the gc clears the memory
 
-## How to run the project
+### How to run the project
 
   1. Modify the pom.xml parameters
       i.  location of the directory containing the log files
