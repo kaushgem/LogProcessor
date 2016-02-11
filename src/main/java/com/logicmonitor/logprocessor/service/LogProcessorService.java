@@ -41,7 +41,7 @@ public enum LogProcessorService {
 	 *            File Path
 	 * @param threadCount
 	 *            No of Threads
-	 * @return
+	 * @return the state of log processing (True / False)
 	 */
 	public boolean LogProcessor(String path, int threadCount) {
 
