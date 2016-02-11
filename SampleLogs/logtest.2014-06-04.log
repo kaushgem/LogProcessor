@@ -1,0 +1,74 @@
+package com.logicmonitor.logprocessor.service;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Stream;
+
+import com.logicmonitor.logprocessor.dto.FileBean;
+import com.logicmonitor.logprocessor.dto.ThreadLock;
+import com.logicmonitor.logprocessor.tasks.FileReadTask;
+import com.logicmonitor.logprocessor.tasks.FileWriteTask;
+import com.logicmonitor.logprocessor.tasks.LineNumberUpdaterTask;
+import com.logicmonitor.logprocessor.tasks.MemoryMonitor;
+
+public enum LogProcessorService {
+
+	LOGPROCESSOR;
+	
+	public void LogProcessor(String path) {
+		
+		List<String> allFilesList = new CopyOnWriteArrayList<>();
+		Map<String, BigInteger> allFilesMap = new TreeMap<>();
+		ThreadLock lock = new ThreadLock();
+		final int threadCount = 10;
+
+		File dir = new File(path);
+		for (File file : dir.listFiles()) {
+			if (file.isFile() && file.getName().matches("logtest.\\d{4}-\\d{2}-\\d{2}.log")) {
+				allFilesList.add(Paths.get(path, file.getName()).toString());
+			}
+		}
+
+		BigInteger startLineNumber = BigInteger.ZERO;
+		for (String file : allFilesList) {
+			try (Stream<String> stream = Files.lines(Paths.get(file), Charset.defaultCharset())) {
+				allFilesMap.put(file, startLineNumber);
+				startLineNumber = startLineNumber.add(BigInteger.valueOf(stream.count()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		BlockingQueue<FileBean> filesToProcess = new ArrayBlockingQueue<>(200);
+		BlockingQueue<FileBean> filesToWrite = new ArrayBlockingQueue<>(200);
+
+		ExecutorService readService = Executors.newFixedThreadPool(threadCount);
+		ExecutorService processService = Executors.newFixedThreadPool(threadCount);
+		ExecutorService monitorService = Executors.newSingleThreadExecutor();
+		ExecutorService writeService = Executors.newFixedThreadPool(threadCount);
+
+		monitorService.execute(new MemoryMonitor(readService, processService, writeService, lock));
+
+		for (int i = 0; i < 10; i++)
+			readService.submit(new FileReadTask(filesToProcess, allFilesList, allFilesMap, lock));
+
+		processService.submit(new LineNumberUpdaterTask(filesToProcess,filesToWrite));
+
+		for (int i = 0; i < 10; i++)
+			writeService.submit(new FileWriteTask(filesToWrite));
+
+	}
+
+}
