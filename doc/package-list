@@ -1,1 +1,5 @@
+com.logicmonitor.logprocessor
+com.logicmonitor.logprocessor.dto
 com.logicmonitor.logprocessor.service
+com.logicmonitor.logprocessor.tasks
+com.logicmonitor.logprocessor.util
